@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// Reglas de seguridad de Agenda Americanista.
+// Pégalas en: Consola de Firebase → Firestore Database → Reglas → Publicar.
+// IMPORTANTE: el correo de bootstrapAdmin() debe ser el mismo de ADMIN_EMAILS en js/config.js.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
+    function activo() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && me().activo == true;
+    }
+    function rol() { return me().rol; }
+    function isAdmin() { return activo() && rol() == 'admin'; }
+    function bootstrapAdmin() {
+      return signedIn() && request.auth.token.email in ['eventos@colegio-americano.edu.co'];
+    }
+    function cambia(campos) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos); }
+
+    // ---------- Usuarios ----------
+    match /usuarios/{uid} {
+      allow read: if activo() || (signedIn() && uid == request.auth.uid);
+      allow create: if isAdmin()
+        || (bootstrapAdmin() && uid == request.auth.uid && request.resource.data.rol == 'admin');
+      // Cada persona solo puede marcar que ya cambió su contraseña temporal
+      allow update: if isAdmin() || (activo() && uid == request.auth.uid && cambia(['debeCambiarClave']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Espacios y personal sin usuario ----------
+    match /espacios/{id} {
+      allow read: if activo();
+      allow write: if isAdmin();
+    }
+    match /personal/{id} {
+      allow read: if activo();
+      allow write: if isAdmin();
+    }
+
+    // ---------- Eventos ----------
+    match /eventos/{id} {
+      function esSolicitante() { return resource.data.solicitanteId == request.auth.uid; }
+      // El solicitante solo puede cancelar su evento
+      function soloCancela() {
+        return request.resource.data.estado == 'cancelado'
+          && cambia(['estado', 'historial', 'actualizado', 'canceladoPor']);
+      }
+      // El solicitante puede editar su evento; si es docente, solo lo deja igual o lo devuelve a aprobación
+      function editaSolicitante() {
+        return resource.data.estado != 'cancelado'
+          && cambia(['titulo', 'dirigidoA', 'seccion', 'espacioId', 'espacioNombre', 'salones', 'fecha', 'horaInicio',
+                     'horaFin', 'responsable', 'personas', 'requerimientos', 'estado', 'areas', 'aprobadoPor',
+                     'motivoRechazo', 'historial', 'actualizado'])
+          && (rol() != 'docente'
+              || request.resource.data.estado == 'pendiente'
+              || (resource.data.estado in ['gestion', 'novedad', 'confirmado']
+                  && request.resource.data.estado in ['gestion', 'novedad', 'confirmado']));
+      }
+      // Aprueba quien pertenece al grupo de aprobación, nunca el propio solicitante
+      function esAprobador() {
+        return resource.data.estado == 'pendiente'
+          && me().get('grupoAprueba', '') != ''
+          && me().get('grupoAprueba', '') == resource.data.grupoAprobacion
+          && !esSolicitante()
+          && request.resource.data.estado in ['gestion', 'confirmado', 'rechazado']
+          && cambia(['estado', 'areas', 'aprobadoPor', 'motivoRechazo', 'historial', 'actualizado']);
+      }
+      // Líderes y personal de apoyo solo tocan la gestión por áreas
+      function esApoyo() {
+        return rol() in ['lider', 'personal']
+          && resource.data.estado in ['gestion', 'novedad', 'confirmado']
+          && request.resource.data.estado in ['gestion', 'novedad', 'confirmado']
+          && cambia(['areas', 'estado', 'historial', 'actualizado']);
+      }
+
+      allow read: if activo();
+      allow create: if activo()
+        && rol() in ['docente', 'coordinacion', 'dependencia', 'directivo', 'lider', 'admin']
+        && request.resource.data.solicitanteId == request.auth.uid
+        && (rol() != 'docente' || (request.resource.data.estado == 'pendiente'
+                                  && request.resource.data.grupoAprobacion == me().get('grupo', '')));
+      allow update: if activo() && (
+        rol() in ['admin', 'directivo']
+        || (esSolicitante() && (soloCancela() || editaSolicitante()))
+        || esAprobador()
+        || esApoyo()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Avisos ----------
+    match /avisos/{id} {
+      allow read: if activo() && resource.data.para == request.auth.uid;
+      allow create: if activo() && request.resource.data.de == request.auth.uid;
+      allow update: if activo() && resource.data.para == request.auth.uid && cambia(['leido']);
+      allow delete: if activo() && resource.data.para == request.auth.uid;
+    }
+  }
+}
