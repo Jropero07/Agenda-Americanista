@@ -959,7 +959,7 @@ function formUsuario(u) {
       <label data-para="lider personal">Área<select name="area">${opt(areas, x.area, 'Selecciona…')}</select></label>
       <label data-para="coordinacion dependencia directivo admin">Aprueba solicitudes de<select name="grupoAprueba">${opt(L.GRUPOS, x.grupoAprueba, 'Ninguno')}</select></label>
       <fieldset class="c2" data-para="responsable"><legend>Espacios a cargo</legend><div class="asignar">${S.d.espacios.filter(e => e.tipo !== 'salon').map(e => `<label class="check"><input type="checkbox" name="espacios" value="${e.id}" ${(x.espacios || []).includes(e.id) ? 'checked' : ''}> ${esc(e.nombre)}</label>`).join('')}</div></fieldset>
-      ${u ? '' : '<p class="c2 suave">Se generará una contraseña temporal; la persona la cambia en su primer ingreso.</p>'}
+      ${u ? '' : `<p class="c2 suave">La contraseña temporal será <b>${L.claveGenerica()}</b>; la persona la cambia en su primer ingreso.</p>`}
     </div>
     <div class="modal-pie"><button type="button" class="btn" data-a="cerrar-modal">Cancelar</button><button class="btn btn-prim" type="submit">${u ? 'Guardar cambios' : 'Crear usuario'}</button></div>
   </form>`);
@@ -999,7 +999,7 @@ async function guardarUsuario(form) {
     <div class="modal-cuerpo"><p>Entrega estos datos a <b>${esc(d.nombre)}</b>:</p>
       <div class="credencial"><div><span>Correo</span><strong>${esc(String(fd.get('correo')).trim().toLowerCase())}</strong></div><div><span>Contraseña temporal</span><strong>${esc(res.clave)}</strong></div></div>
       <p class="suave">Al entrar por primera vez, la plataforma le pedirá crear su propia contraseña.</p></div>
-    <div class="modal-pie"><button class="btn btn-prim" data-a="cerrar-modal">Listo</button></div>`, 'chica');
+    <div class="modal-pie"><button class="btn" data-a="copiar-credencial" data-texto="${esc(`Agenda Americanista\n${location.origin}${location.pathname}\nCorreo: ${String(fd.get('correo')).trim().toLowerCase()}\nContraseña temporal: ${res.clave}`)}">Copiar</button><button class="btn btn-prim" data-a="cerrar-modal">Listo</button></div>`, 'chica');
 }
 
 // ======================= Espacios y personal (admin) =======================
@@ -1048,6 +1048,7 @@ async function cambiarClave(form, obligatoria) {
   const c1 = String(fd.get('clave')), c2 = String(fd.get('clave2'));
   if (c1.length < 6) { toast('La contraseña debe tener al menos 6 caracteres.', 'error'); return; }
   if (c1 !== c2) { toast('Las contraseñas no coinciden.', 'error'); return; }
+  if (c1 === L.claveGenerica()) { toast('Elige una contraseña distinta a la temporal.', 'error'); return; }
   if (await ejecutar(() => S.api.cambiarClave(c1), 'Contraseña actualizada.')) {
     form.reset();
     if (obligatoria) { S.yo = { ...S.yo, debeCambiarClave: false }; render(); }
@@ -1094,6 +1095,11 @@ document.addEventListener('click', async (ev) => {
     case 'filtro-mias': S.filtroMias = t.dataset.f; renderContenido(); break;
     case 'filtro-area': S.filtroArea = t.dataset.f; renderContenido(); break;
     case 'imprimir': window.print(); break;
+    case 'copiar-credencial': {
+      const txt = t.dataset.texto;
+      try { await navigator.clipboard.writeText(txt); toast('Datos copiados. Pégalos en WhatsApp o en un correo.'); } catch { toast('No se pudo copiar; selecciona el texto manualmente.', 'error'); }
+      break;
+    }
     case 'whatsapp': window.open('https://wa.me/?text=' + encodeURIComponent(textoWhatsapp()), '_blank', 'noopener'); break;
     case 'usuario-nuevo': formUsuario(null); break;
     case 'usuario-editar': formUsuario(usuario(id)); break;

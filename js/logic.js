@@ -44,6 +44,9 @@ export const ESTADOS_AREA = { pendiente: 'Pendiente', confirmado: 'Confirmado', 
 export const CREADORES = ['docente', 'coordinacion', 'dependencia', 'directivo', 'lider', 'admin'];
 export const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+// Contraseña temporal común para las cuentas nuevas (se cambia en el primer ingreso)
+export const claveGenerica = (d = new Date()) => `Americano${d.getFullYear()}`;
+
 // ---------- Fechas y horas ----------
 const pad = n => String(n).padStart(2, '0');
 export const hoyISO = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

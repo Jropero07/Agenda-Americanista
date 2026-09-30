@@ -1,5 +1,5 @@
 // Capa de datos de DEMOSTRACIÓN: todo vive en memoria y en el navegador.
-import { hoyISO, sumarDias, diaSemana, areasIniciales, ESPACIOS_INICIALES } from './logic.js';
+import { hoyISO, sumarDias, diaSemana, areasIniciales, ESPACIOS_INICIALES, claveGenerica } from './logic.js';
 
 const CLAVE = 'agenda-americanista-demo-v2';
 const SESION = 'agenda-americanista-demo-sesion';
@@ -170,7 +170,7 @@ export function crearAPI() {
       if (db.usuarios.some(x => x.correo === correoN)) throw new Error('Ya existe un usuario con ese correo.');
       const n = { ...d, id: uid(), correo: correoN, activo: true, debeCambiarClave: true };
       db.usuarios.push(n); guardar();
-      return { id: n.id, clave: 'demo1234' };
+      return { id: n.id, clave: claveGenerica() };
     },
     async actualizarUsuario(id, c) { Object.assign(db.usuarios.find(x => x.id === id), c); guardar(); if (id === yoId) notificarAuth(); },
     async eliminarUsuario(id) { db.usuarios = db.usuarios.filter(x => x.id !== id); guardar(); },

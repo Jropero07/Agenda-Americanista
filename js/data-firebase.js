@@ -9,7 +9,7 @@ import {
   onSnapshot, query, where, writeBatch, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { firebaseConfig, ADMIN_EMAILS } from './config.js';
-import { hoyISO, sumarDias } from './logic.js';
+import { hoyISO, sumarDias, claveGenerica } from './logic.js';
 
 const ahora = () => new Date().toISOString();
 
@@ -28,14 +28,6 @@ const MENSAJES = {
 const traducir = err => new Error(MENSAJES[err && err.code] || (err && err.message) || 'Ocurrió un error.');
 const envolver = fn => async (...a) => { try { return await fn(...a); } catch (e) { throw traducir(e); } };
 
-function claveTemporal() {
-  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let s = '';
-  const r = new Uint32Array(8);
-  crypto.getRandomValues(r);
-  r.forEach(n => { s += c[n % c.length]; });
-  return 'Ca-' + s;
-}
 
 export function crearAPI() {
   const app = initializeApp(firebaseConfig);
@@ -97,7 +89,7 @@ export function crearAPI() {
     },
 
     crearUsuario: envolver(async (d) => {
-      const clave = claveTemporal();
+      const clave = claveGenerica();
       const sec = initializeApp(firebaseConfig, 'alta-' + Date.now());
       try {
         const secAuth = getAuth(sec);

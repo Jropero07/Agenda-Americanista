@@ -38,7 +38,7 @@ Los módulos de JavaScript no abren con doble clic (`file://`); se necesita un s
 5. **Publicar las reglas.** Firestore → Reglas → pega el contenido de `firestore.rules` (ya trae `eventos@colegio-americano.edu.co` como administrador) y presiona *Publicar*.
 6. **Administrador inicial.** En `js/config.js` escribe el mismo correo en `ADMIN_EMAILS`. Luego en Authentication → Usuarios → *Agregar usuario* crea tu cuenta con ese correo. La primera vez que entres, la plataforma te registra como Administrador del sistema.
 7. **Espacios.** Entra como administrador → *Espacios y personal* → **Cargar los 7 espacios del colegio y Salón**.
-8. **Usuarios.** En *Usuarios* → *Nuevo usuario*: nombre, correo institucional, cargo, rol y grupo o área. La plataforma genera una contraseña temporal que la persona cambia en su primer ingreso.
+8. **Usuarios.** En *Usuarios* → *Nuevo usuario*: nombre, correo institucional, cargo, rol y grupo o área. Todas las cuentas nuevas inician con la contraseña temporal `Americano` + año actual (ej. `Americano2026`); la persona la cambia en su primer ingreso. El botón **Copiar** deja listos correo, enlace y clave para enviarlos.
 9. **Dominio autorizado.** Cuando publiques en GitHub Pages, agrega `tuusuario.github.io` en Authentication → Configuración → *Dominios autorizados*.
 
 ## Publicar en Firebase Hosting (recomendado)
