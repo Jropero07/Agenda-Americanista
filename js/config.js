@@ -23,6 +23,6 @@ export const ADMIN_EMAILS = ['eventos@colegio-americano.edu.co'];
 
 // true = modo demostración (datos de ejemplo en el navegador), aunque Firebase ya esté configurado.
 // Cambia a false para usar Firebase.
-export const FORZAR_DEMO = true;
+export const FORZAR_DEMO = false;
 
 export const MODO_DEMO = FORZAR_DEMO || !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('PEGAR');
